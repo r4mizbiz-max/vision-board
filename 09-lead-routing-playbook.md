@@ -121,10 +121,10 @@ lead_name      = {{contact.name}}
 lead_phone     = {{contact.phone}}
 contact_id     = {{contact.id}}
 source         = meta
-client_name    = Clear Heating and Air     ← hard-code this per workflow
+client_name    = (your client's name)        ← hard-code this per workflow
 ```
 
-The OS matches `client_name` against your client list using a case-insensitive **CONTAINS** check (either direction). For example, `client_name = "clearheating"` will match the OS client `"Clear Heating and Air"`. If nothing matches → the lead is **not** recorded and the webhook returns 404; fix `client_name` in the GHL workflow so it contains a word from your client's name.
+The OS matches `client_name` against your client list using a case-insensitive **CONTAINS** check (either direction). For example, if your client is named `"Clear Heating and Air"` in the OS, `client_name = "clearheating"` matches it. If nothing matches → the lead is **not** recorded and the webhook returns 404; fix `client_name` in the GHL workflow so it contains a word from your client's name.
 
 No email is captured — homeowners give phone over email anyway, so it'd just be empty.
 
