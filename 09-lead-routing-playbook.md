@@ -119,13 +119,14 @@ GHL workflow per client sub-account → Trigger: **Form Submitted** (or Contact 
 ```
 lead_name      = {{contact.name}}
 lead_phone     = {{contact.phone}}
-lead_email     = {{contact.email}}
-ghl_contact_id = {{contact.id}}
-location_id    = {{location.id}}
+contact_id     = {{contact.id}}
 source         = meta
+client_name    = Clear Heating and Air     ← hard-code this per workflow
 ```
 
-The OS matches the client by `location_id` (or fuzzy match on `location.name` / `calendar.name`), records the lead, and surfaces it in /csm/leads.
+The OS matches `client_name` against your client list using a case-insensitive **CONTAINS** check (either direction). For example, `client_name = "clearheating"` will match the OS client `"Clear Heating and Air"`. If nothing matches → the lead is **not** recorded and the webhook returns 404; fix `client_name` in the GHL workflow so it contains a word from your client's name.
+
+No email is captured — homeowners give phone over email anyway, so it'd just be empty.
 
 ### B2B leads (Ram's own sales pipeline)
 
