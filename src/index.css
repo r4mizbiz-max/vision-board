@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-brand-violet: #8b5cf6;
+  --color-brand-pink:   #ec4899;
+  --color-brand-orange: #fb923c;
+
+  --color-bg:        #08070d;
+  --color-surface:   #14121c;
+  --color-surface-2: #1d1a28;
+  --color-border:    #2a2638;
+}
+
+html, body {
+  background: var(--color-bg);
+  color: rgb(244 244 245);
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+.bg-brand-gradient {
+  background-image: linear-gradient(90deg, var(--color-brand-violet) 0%, var(--color-brand-pink) 55%, var(--color-brand-orange) 100%);
+}
+.bg-brand-gradient-soft {
+  background-image: linear-gradient(135deg,
+    color-mix(in oklab, var(--color-brand-violet) 18%, transparent) 0%,
+    color-mix(in oklab, var(--color-brand-pink) 18%, transparent) 55%,
+    color-mix(in oklab, var(--color-brand-orange) 18%, transparent) 100%);
+}
+.text-brand-gradient {
+  background-image: linear-gradient(90deg, var(--color-brand-violet) 0%, var(--color-brand-pink) 55%, var(--color-brand-orange) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.brand-glow {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-brand-pink) 25%, transparent),
+    0 8px 32px -8px color-mix(in oklab, var(--color-brand-pink) 35%, transparent);
+}
+
+/* ─── Subtle vignette and grain backdrop for the page ─── */
+.page-bg {
+  background:
+    radial-gradient(circle at 15% -10%, color-mix(in oklab, var(--color-brand-violet) 18%, transparent), transparent 50%),
+    radial-gradient(circle at 90% 10%, color-mix(in oklab, var(--color-brand-pink) 14%, transparent), transparent 45%),
+    radial-gradient(circle at 50% 110%, color-mix(in oklab, var(--color-brand-orange) 12%, transparent), transparent 50%),
+    var(--color-bg);
+}
+
+/* Flow diagram arrow */
+.flow-arrow { stroke: var(--color-brand-pink); stroke-width: 2; fill: none; }
+.flow-arrow-head { fill: var(--color-brand-pink); }
