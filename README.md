@@ -20,3 +20,18 @@
 
 ## What This Repo Is
 This is my scaling playbook. Every decision about hiring, comp, structure, and tech lives here. If I'm ever unsure what to do next, I open `06-30-day-roadmap.md`.
+
+## Files
+
+| # | File | What's in it |
+|---|---|---|
+| - | [README.md](README.md) | This page — current state + targets |
+| 01 | [01-the-vision.md](01-the-vision.md) | End-state — what the agency looks like at 50 clients |
+| 02 | [02-org-structure.md](02-org-structure.md) | Pod model, reporting lines |
+| 03 | [03-comp-plan.md](03-comp-plan.md) | Pay structure for everyone |
+| 04 | [04-roles-and-responsibilities.md](04-roles-and-responsibilities.md) | Who does what |
+| 05 | [05-client-pod-system.md](05-client-pod-system.md) | Slack channels + GHL sub-account → pod mapping |
+| 06 | [06-30-day-roadmap.md](06-30-day-roadmap.md) | Week-by-week plan |
+| 07 | [07-tech-stack.md](07-tech-stack.md) | What runs on what |
+| 08 | [08-my-role.md](08-my-role.md) | What I own vs what I delegate |
+| **09** | [09-lead-routing-playbook.md](09-lead-routing-playbook.md) | **Bulletproof lead → call → appt → billing flow. Print and hand to every new CSM.** |
