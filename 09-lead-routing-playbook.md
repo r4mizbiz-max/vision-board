@@ -69,6 +69,76 @@ Trigger to spin up Pod #2: Pod #1 hits 6/6 + you have 2 more clients **already s
 
 ---
 
+## GHL Pipeline + Custom Dispositions (the funnel source-of-truth)
+
+The OS dashboard's funnel stats (Connect %, ABR, Show %, Close %) all come from GHL pipeline stage transitions. **This is non-negotiable** — if CSMs don't move opportunities through the pipeline, the funnel breaks.
+
+### Pipeline name (per sub-account)
+
+```
+PPSA — Inbound Leads
+```
+
+### Pipeline stages — exact list, in order
+
+| # | Stage name | When it fires | Funnel meaning |
+|---|---|---|---|
+| 1 | New Lead | Form submitted | Top of funnel |
+| 2 | Called — No Answer | CSM dialed, no pickup | Counts toward "no-answer rate" |
+| 3 | Called — Voicemail | CSM left VM | Same |
+| 4 | Connected | Lead picked up | Counts toward "connect rate" |
+| 5 | Booked | Appointment booked | ABR numerator |
+| 6 | Showed | Customer attended | Show rate numerator |
+| 7 | Closed Won | Sale made | Close rate numerator |
+| 8 | Closed Lost | Sale didn't happen | Close rate denominator (with Showed) |
+| 9 | No Show | Customer didn't attend | Show rate denominator |
+| 10 | Cancelled | Customer cancelled | Side bucket |
+
+### Webhook on every stage change
+
+GHL → Workflows → New Workflow → Trigger: **"Opportunity Stage Changed"**
+
+Action: **Webhook** to:
+
+```
+https://app.rambitiousmedia.com/api/ghl-webhook
+```
+
+Body fields (CSMs see these; never edit):
+
+```
+calendar_id        = {{calendar.name}}
+assigned_to        = {{user.name}}
+lead_name          = {{contact.name}}
+lead_phone         = {{contact.phone}}
+ghl_appointment_id = {{appointment.id}}
+location_id        = {{location.id}}
+scheduled_for      = {{appointment.only_start_time}}
+```
+
+The OS infers the **pod from the matched client**, so funnel stats roll up by pod automatically — no manual tagging.
+
+## B2B lead webhook (Ram's own pipeline)
+
+For your B2B sales pipeline (your ads → your booking calls), use a **separate** webhook:
+
+```
+https://app.rambitiousmedia.com/api/b2b-lead
+```
+
+GHL workflow trigger: **Contact Created** (filter to your B2B sub-account / B2B-tagged contacts). Same `Send Webhook` action with these body fields:
+
+```
+lead_name   = {{contact.name}}
+lead_phone  = {{contact.phone}}
+lead_email  = {{contact.email}}
+niche       = {{contact.niche}}              (optional custom field)
+adset_name  = {{contact.adset_name}}         (optional)
+ad_name     = {{contact.ad_name}}            (optional)
+```
+
+The OS dedupes by phone — re-firing the workflow won't create duplicate leads.
+
 ## GHL Workflow — exact build (per sub-account)
 
 Set this up **once per GHL sub-account.** Every client in the same pod uses the same workflow.
