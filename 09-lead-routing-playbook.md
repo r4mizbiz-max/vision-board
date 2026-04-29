@@ -69,64 +69,71 @@ Trigger to spin up Pod #2: Pod #1 hits 6/6 + you have 2 more clients **already s
 
 ---
 
-## GHL Pipeline + Custom Dispositions (the funnel source-of-truth)
+## How the funnel actually works (CSMs drive it from the OS)
 
-The OS dashboard's funnel stats (Connect %, ABR, Show %, Close %) all come from GHL pipeline stage transitions. **This is non-negotiable** — if CSMs don't move opportunities through the pipeline, the funnel breaks.
+CSMs do **NOT** touch GHL opportunities or pipelines. Everything happens in the OS dashboard.
 
-### Pipeline name (per sub-account)
-
-```
-PPSA — Inbound Leads
-```
-
-### Pipeline stages — exact list, in order
-
-| # | Stage name | When it fires | Funnel meaning |
-|---|---|---|---|
-| 1 | New Lead | Form submitted | Top of funnel |
-| 2 | Called — No Answer | CSM dialed, no pickup | Counts toward "no-answer rate" |
-| 3 | Called — Voicemail | CSM left VM | Same |
-| 4 | Connected | Lead picked up | Counts toward "connect rate" |
-| 5 | Booked | Appointment booked | ABR numerator |
-| 6 | Showed | Customer attended | Show rate numerator |
-| 7 | Closed Won | Sale made | Close rate numerator |
-| 8 | Closed Lost | Sale didn't happen | Close rate denominator (with Showed) |
-| 9 | No Show | Customer didn't attend | Show rate denominator |
-| 10 | Cancelled | Customer cancelled | Side bucket |
-
-### Webhook on every stage change
-
-GHL → Workflows → New Workflow → Trigger: **"Opportunity Stage Changed"**
-
-Action: **Webhook** to:
+### The flow
 
 ```
-https://app.rambitiousmedia.com/api/ghl-webhook
+1.  Lead submits form in GHL (any client sub-account)
+2.  GHL workflow → POST /api/client-lead → OS records as client_lead{ status: 'new' }
+3.  Lead appears in CSM's /csm/leads view (their pod's leads only)
+4.  CSM calls the lead, then updates status from a dropdown:
+       new → called_no_answer → ...
+       new → connected → booked
+5.  When CSM books in GHL calendar, GHL fires the appointment webhook
+       → OS records appointment with disposition='booked'
+6.  After the call, CSM (or GHL) marks appointment showed/no-show/closed
 ```
 
-Body fields (CSMs see these; never edit):
+The OS funnel stats are computed from **two tables**:
+- `client_leads` (CSM-driven status) → top-of-funnel: Leads, Contact rate, No-answer rate, ABR
+- `appointments` (GHL-driven bookings) → Show rate, Close rate
+
+### Status enum (CSM dropdown options)
+
+| Status | Meaning | Funnel impact |
+|---|---|---|
+| `new` | Just landed, untouched | Counts toward "leads" |
+| `called_no_answer` | Dialed, no pickup | "No-answer rate" |
+| `voicemail` | Left a VM | "No-answer rate" |
+| `connected` | Got them on the phone | "Contact rate" + "Connect rate" |
+| `callback_requested` | Asked to be called back | "Contact rate" |
+| `booked` | Appt scheduled (creates appointment row in parallel) | "ABR" numerator |
+| `not_interested` | Dead lead | Closes out the lead |
+| `wrong_number` | Bad phone | Closes out the lead |
+| `duplicate` | Already in system | Closes out the lead |
+| `disqualified` | Out of service area / not target | Closes out the lead |
+
+## Webhooks — where to send what
+
+### B2C leads (your client's homeowners)
 
 ```
-calendar_id        = {{calendar.name}}
-assigned_to        = {{user.name}}
-lead_name          = {{contact.name}}
-lead_phone         = {{contact.phone}}
-ghl_appointment_id = {{appointment.id}}
-location_id        = {{location.id}}
-scheduled_for      = {{appointment.only_start_time}}
+POST https://app.rambitiousmedia.com/api/client-lead
 ```
 
-The OS infers the **pod from the matched client**, so funnel stats roll up by pod automatically — no manual tagging.
-
-## B2B lead webhook (Ram's own pipeline)
-
-For your B2B sales pipeline (your ads → your booking calls), use a **separate** webhook:
+GHL workflow per client sub-account → Trigger: **Form Submitted** (or Contact Created with the inbound tag). Body fields:
 
 ```
-https://app.rambitiousmedia.com/api/b2b-lead
+lead_name      = {{contact.name}}
+lead_phone     = {{contact.phone}}
+lead_email     = {{contact.email}}
+ghl_contact_id = {{contact.id}}
+location_id    = {{location.id}}
+source         = meta
 ```
 
-GHL workflow trigger: **Contact Created** (filter to your B2B sub-account / B2B-tagged contacts). Same `Send Webhook` action with these body fields:
+The OS matches the client by `location_id` (or fuzzy match on `location.name` / `calendar.name`), records the lead, and surfaces it in /csm/leads.
+
+### B2B leads (Ram's own sales pipeline)
+
+```
+POST https://app.rambitiousmedia.com/api/b2b-lead
+```
+
+GHL workflow on Ram's B2B sub-account → Trigger: **Contact Created**. Body fields:
 
 ```
 lead_name   = {{contact.name}}
@@ -137,7 +144,27 @@ adset_name  = {{contact.adset_name}}         (optional)
 ad_name     = {{contact.ad_name}}            (optional)
 ```
 
-The OS dedupes by phone — re-firing the workflow won't create duplicate leads.
+The OS dedupes by phone — re-firing the workflow won't make duplicates.
+
+### Appointments (any sub-account)
+
+```
+POST https://app.rambitiousmedia.com/api/ghl-webhook
+```
+
+GHL workflow → Trigger: **Appointment Created** OR **Appointment Status Changed**. Body fields:
+
+```
+calendar_id        = {{calendar.name}}
+assigned_to        = {{user.name}}     (set to "SELF BOOK" when there's no CSM)
+lead_name          = {{contact.name}}
+lead_phone         = {{contact.phone}}
+scheduled_for      = {{appointment.only_start_time}}
+ghl_appointment_id = {{appointment.id}}
+location_id        = {{location.id}}
+```
+
+When `assigned_to = SELF BOOK`, the appointment is attributed to the self-book bucket (not to a CSM). Show/close rates still apply.
 
 ## GHL Workflow — exact build (per sub-account)
 
